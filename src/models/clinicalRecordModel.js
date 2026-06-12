@@ -4,13 +4,7 @@ import { Schema, model } from "mongoose";
 /*
 patient_id,
 diagnosis,
-medications: [
-    {
-        medicineName: {
-        
-        }
-    }
-],
+medications,
 medicalNotes
 */
 
