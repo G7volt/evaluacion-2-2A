@@ -1,8 +1,3 @@
-import nodemailer from "nodemailer";
-import crypto from "crypto";
-import jsonwebtoken from "jsonwebtoken"
-import bcrypt from "bcryptjs"
-
 import {v2 as Cloudinary} from "cloudinary"
 
 import pacientesModel from "../models/pacientesModel.js";

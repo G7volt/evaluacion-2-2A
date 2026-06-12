@@ -56,8 +56,8 @@ medicalEquipmentController.updateEquipment = async (req, res) => {
 
         if(req.file){
             await cloudinary.uploader.destroy(producto.public_id);
-            productoModified.image = req.file.path;
-            productoModified.public_id = req.file.filename;
+            equipmentModified.image = req.file.path;
+            equipmentModified.public_id = req.file.filename;
         }
 
         const updateEquipment = await productosModel.findByIdAndUpdate(req.params.id, {
@@ -87,7 +87,7 @@ medicalEquipmentController.updateEquipment = async (req, res) => {
 medicalEquipmentController.deleteEquipment = async (req, res) => {
     try {
         //Buscamos el repartidos a eliminar
-        const equipmentFound = medicalEquipmentModel.findById(req.params.insertEquipment)
+        const equipmentFound = medicalEquipmentModel.findById(req.params.id)
 
         //eliminamos la imagen de cloudinary
         await cloudinary.uploader.destroy(equipmentFound.public_id)
