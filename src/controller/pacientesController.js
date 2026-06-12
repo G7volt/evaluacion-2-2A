@@ -3,6 +3,8 @@ import crypto from "crypto";
 import jsonwebtoken from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 
+import {v2 as Cloudinary} from "cloudinary"
+
 import pacientesModel from "../models/pacientesModel.js";
 
 const pacientesController = {};
@@ -42,21 +44,43 @@ pacientesController.updatePaciente = async (req, res) => {
     try {
 
         let{
-            nombre,
-            isActive
+            name,
+            lastName,
+            email,
+            password,
+            phone,
+            address,
+            phoneEmergencyContacts,
         }= req.body;
-        nombre = nombre?.trim()
+        name = name?.trim()
 
         const paciente = await pacientesModel.findByIdAndUpdate(req.params.id);
+
+        //profilePhoto: req.file.path,
 
         if (!paciente) {
             return res.status(404).json({message: "Paciente no encontrado"})
         }
 
-        paciente.nombre = nombre ?? paciente.nombre
-        paciente.isActive = isActive ?? paciente.isActive
+        if (req.file) {
+            await cloudinary.uploader.destroy(paciente.public_id);
+            productoModified.imagen = req.file.path;
+            productoModified.public_id = req.file.filename;
+        }
 
-        await paciente.save();
+        const updatePaciente = await pacientesModel.findByIdAndUpdate(req.params.id, {
+            name,
+            lastName,
+            email,
+            password,
+            phone,
+            address,
+            phoneEmergencyContacts,
+            profilePhoto: req.file.path,
+            public_id: req.file.filename
+        }, {new: true});
+
+        await updatePaciente.save();
 
         return res.status(200).json({message: "paciente actualizado"})
 

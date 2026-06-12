@@ -59,8 +59,8 @@ registrarPacientesController.registrar = async (req, res) => {
             address,
             bloodType,
             phoneEmergencyContacts,
-            profilePhoto,
-            public_id,
+            profilePhoto: req.file.path,
+            public_id: req.file.filename,
             isActive: true,
             isVerified: false
         });
