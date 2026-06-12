@@ -63,7 +63,7 @@ pacientesController.updatePaciente = async (req, res) => {
         }
 
         if (req.file) {
-            await cloudinary.uploader.destroy(paciente.public_id);
+            await Cloudinary.uploader.destroy(paciente.public_id);
             productoModified.imagen = req.file.path;
             productoModified.public_id = req.file.filename;
         }

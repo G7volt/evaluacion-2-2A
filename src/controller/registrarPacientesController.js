@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs"
 
 import pacientesModel from "../models/pacientesModel.js";
 import config from "../../config.js";
+import { text } from "stream/consumers";
+import { error, info } from "console";
 
 const  registrarPacientesController = {};
 
@@ -21,12 +23,6 @@ registrarPacientesController.registrar = async (req, res) => {
             address,
             bloodType,
             phoneEmergencyContacts,
-            profilePhoto,
-            public_id,
-            isActive,
-            isVerified,
-            loginAttempts,
-            timeOut
 
         } = req.body
 
@@ -73,10 +69,38 @@ registrarPacientesController.registrar = async (req, res) => {
             {email, codigoAleatorio},
             config.jwt.SECRET,
             {expiresIn: "15 m"}
-        )
+        );
+
+        res.cookie("tokenRegistroCookie", tokenCodigo, {maxAge: 15 * 60 * 1000});
         
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: config.email.user_email,
+                pass: config.email.user_password
+            }
+        });
+
+        const enviarCorreo = {
+            from: config.email.user_email,
+            to: email,
+            subject: "codigo de verificacion",
+            text: `Este es tu codigio para verificar tu cuenta: ${codigoAleatorio}, Usalo antes de que pasen 15 min`
+        }
+        
+        transporter.sendMail(enviarCorreo, (error, info) => {
+            if (error) {
+                console.log("error " + error)
+                return res.status(500).json({message: "Error enviando el correo"})
+            }
+        })
+        return res.status(200).json({message: "correo enviado"})
     } catch (error) {
         console.log(error)
         return res.status(500).json({message: "Internal Server Error"})
     }
+}
+
+registrarPacientesController.verificarCodigo = async (req, res) => {
+    
 }
