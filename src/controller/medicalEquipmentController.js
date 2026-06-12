@@ -1,13 +1,13 @@
-import productosModel from "../models/productosModel.js";
+import medicalEquipmentModel from "../models/medicalEquipmentModel.js";
 
 import {v2 as cloudinary} from "cloudinary";
 
-const productosController = {};
+const medicalEquipmentController = {};
 
-productosController.getAll = async (req, res) => {
+medicalEquipmentController.getAll = async (req, res) => {
     try {
 
-        const get = await productosModel.find().populate("variaciones", "tamaño precio stock");
+        const get = await medicalEquipmentModel.find();
         return res.status(200).json(get);
 
     } catch (error){
@@ -16,76 +16,67 @@ productosController.getAll = async (req, res) => {
     }
 }
 
-productosController.getById = async (req, res) => {
-    try{
-        const producto = await productosModel.findById(req.params.id).populate("variaciones", "tamaño precio stock");
-        if(!producto){
-            return res.status(404).json({message: "Producto no encontrado"});
-        }
-        return res.status(200).json(producto);
-    }catch(error){
-        console.log("error" + error);
-        return res.status(500).json({message: "Error interno del servidor"});
-    }
-}
-
-productosController.insertProducto = async (req, res) => {
+medicalEquipmentController.insertEquipment = async (req, res) => {
 
     try{
-        const {nombre, descripcion, variaciones, lanzamientoVIP, fechaLanzamiento, categoriaId} = req.body;
+        const {equipmentName, description, brand, model, purchaseDate, maintenanceDate, condition, status} = req.body;
         
-        const newProducto = new productosModel({
-            nombre,
-            descripcion,
-            variaciones,
+        const newEquipment = new medicalEquipmentModel({
+            equipmentName,
+            description,
+            brand,
+            model,
+            purchaseDate,
+            maintenanceDate,
+            condition,
             imagen: req.file.path,
             public_id: req.file.filename,
-            lanzamientoVIP,
-            fechaLanzamiento,
-            categoriaId,
-            isActive: true,
-            createdAt: Date.now()
+            status,
+            isAvailable: true
         })
 
-        await newProducto.save();
-        return res.status(200).json({message: "Producto Creado"})
+        await newEquipment.save();
+        return res.status(200).json({message: "Equipamiento Creado"})
     }catch(error){
         console.log("error: " + error);
         return res.status(500).json({message: "Error interno del servidor"});
     }
 }
 
-productosController.updateProducto = async (req, res) => {
+medicalEquipmentController.updateEquipment = async (req, res) => {
     try{
 
-        let {nombre, descripcion, variaciones, lanzamientoVIP, fechaLanzamiento, categoriaId} = req.body;
-        const producto = await productosModel.findById(req.params.id);
-        if(!producto){
-            return res.status(404).json({message: "Producto no encontrado"});
+        let {equipmentName, description, brand, model, purchaseDate, maintenanceDate, condition, status} = req.body;
+        const equipment = await medicalEquipmentModel.findById(req.params.id);
+        if(!equipment){
+            return res.status(404).json({message: "Equipamiento no encontrado"});
         }
 
-        const productoModified = {nombre, descripcion, variaciones, lanzamientoVIP, fechaLanzamiento, categoriaId};
+        const equipmentModified = {equipmentName, description, brand, model, purchaseDate, maintenanceDate, condition, status};
 
         if(req.file){
             await cloudinary.uploader.destroy(producto.public_id);
-            productoModified.imagen = req.file.path;
+            productoModified.image = req.file.path;
             productoModified.public_id = req.file.filename;
         }
 
-        const updateProducto = await productosModel.findByIdAndUpdate(req.params.id, {
-            nombre, 
-            descripcion, 
-            variaciones,
+        const updateEquipment = await productosModel.findByIdAndUpdate(req.params.id, {
+            equipmentName,
+            description,
+            brand,
+            model,
+            purchaseDate,
+            maintenanceDate,
+            condition,
             imagen: req.file.path,
             public_id: req.file.filename,
-            lanzamientoVIP,
-            fechaLanzamiento,
-            categoriaId,
-            isActive: true,
-            updatedAt: Date.now()
+            status,
+            isAvailable: true
         }, {new: true});
 
-        await updateProducto.save();
+        await updateEquipment.save();
+
+        return res.status(200).json({message:"Equipamiento actualizado"})
 
     } catch(error){
         console.log("error" + error);
@@ -93,32 +84,22 @@ productosController.updateProducto = async (req, res) => {
     }
 }
 
-productosController.deleteProducto = async (req, res) => {
+medicalEquipmentController.deleteEquipment = async (req, res) => {
     try {
-        //validacion para eliminar en un periodo corto de tiempo (15 minutos)
-        let {createdAt, isActive} = req.params;
+        //Buscamos el repartidos a eliminar
+        const equipmentFound = medicalEquipmentModel.findById(req.params.insertEquipment)
 
-        const DELETE_WINDOWS_MS = 15 * 60 * 1000;
+        //eliminamos la imagen de cloudinary
+        await cloudinary.uploader.destroy(equipmentFound.public_id)
 
-        const eliminarProducto = await productosModel.findById(req.params.id);
-        
-        if(!eliminarProducto){
-            return res.status(404).json({message: "Producto no encontrado"})            
-        }
-        
-        const elapsed = Date.now() - eliminarProducto.createdAt;
-        
-        if(elapsed > DELETE_WINDOWS_MS){
-            return res.status(403).json({message: "El periodo para eliminar el producto ha vencido"})
-        }
-        
-        await productosModel.findByIdAndDelete(req.params.id);
-        return res.status(200).json({message: "Producto eliminado Correctamente"})
-        
+        //eliminamos el repartidor de la base de datos
+        await medicalEquipmentModel.findByIdAndDelete(req.params.id)
+
+        return res.status(200).json({message: "Equipamiento Eliminado"})
     } catch (error) {
-        console.log("error" + error);
-        return res.status(500).json({message: "Error interno del servidor"});
+        console.log("error" + error)
+        return res.status(500).json({message: "Internal server error"})
     }
 }
 
-export default productosController;
+export default medicalEquipmentController;

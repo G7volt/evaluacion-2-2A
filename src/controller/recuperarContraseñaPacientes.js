@@ -17,7 +17,7 @@ recuperarContraseñaPacientesController.solicitarCodigo = async (req, res) => {
             res.clearCookie("tokenRecuperacionCorreo");
         }
 
-        const { correo } = req.body;
+        const { email } = req.body;
 
         const pacienteEncontrado = await pacientesModel.findOne({ email });
         if(!pacienteEncontrado){
@@ -47,7 +47,7 @@ recuperarContraseñaPacientesController.solicitarCodigo = async (req, res) => {
             to: correo,
             subject: `Código de verificación: ${codigoAleatorio}`,
             body: "Codigo pa",
-            html: HTMLRecuperarContraseña(correo, codigoAleatorio)
+            html: HTMLRecuperarContraseña(email, codigoAleatorio)
         };
 
         transporter.sendMail(enviarCorreo, (error, info) =>{
@@ -70,16 +70,16 @@ recuperarContraseñaPacientesController.verificarCodigo = async (req, res) => {
 
         const tokenRecuperacion = req.cookies.tokenRecuperacionCorreo;
 
-        const decodificar = jsonwebtoken.verify(tokenRecuperacion, config.jwt.secret);
-        const { correo, codigoAleatorio } = decodificar;
+        const decodificar = jsonwebtoken.verify(tokenRecuperacion, config.JWT.SECRET);
+        const { email, codigoAleatorio } = decodificar;
 
         if(codigoAleatorio !== codigoSolicitado){
             return res.status(400).json({ message: "Los codigos no coinciden" });
         }
 
         const tokenVerificado = jsonwebtoken.sign(
-            {correo, tipoUsuario: decodificar.tipoUsuario, verificado: true},
-            config.jwt.secret,
+            {email, tipoUsuario: decodificar.tipoUsuario, verificado: true},
+            config.JWT.SECRET,
             {expiresIn: "15m"}
         )
         

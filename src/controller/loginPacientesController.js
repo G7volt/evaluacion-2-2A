@@ -22,7 +22,7 @@ logInPacientesController.logIn = async (req, res) => {
             return res.status(403).json({message: "Cuenta bloqueada temporalmente", time: time});
         }
 
-        const coincidencia = await bcrypt.compare(password, pacienteEncontrado.contraseña);
+        const coincidencia = await bcrypt.compare(password, pacienteEncontrado.password);
 
         if (!coincidencia) {
             pacienteEncontrado.loginAttempts = (pacienteEncontrado || 0) + 1;

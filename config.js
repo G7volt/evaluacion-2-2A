@@ -6,7 +6,7 @@ export const config = {
     db: {
         URL: process.env.DB_URI
     },
-    Port: {
+    server: {
         PORT: process.env.PORT
     },
     JWT: {
