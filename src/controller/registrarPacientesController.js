@@ -4,6 +4,7 @@ import jsonwebtoken from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 
 import pacientesModel from "../models/pacientesModel.js";
+
 import config from "../../config.js";
 import { text } from "stream/consumers";
 import { error, info } from "console";
@@ -18,6 +19,7 @@ registrarPacientesController.registrar = async (req, res) => {
             lastName,
             email,
             password,
+            confirmPassword,
             birthDate,
             phone,
             address,
@@ -31,7 +33,7 @@ registrarPacientesController.registrar = async (req, res) => {
         email = email?.trim();
         password = password?.trim();
 
-        confirmarContraseña = confirmarContraseña?.trim
+        confirmPassword = confirmPassword?.trim()
 
         if (!name || !lastName || email|| !password ) {
             return res.status(400).json({message: "campos incompletos"})
@@ -39,17 +41,21 @@ registrarPacientesController.registrar = async (req, res) => {
 
         const pacienteEncontrado = await pacientesModel.findOne({email});
 
-        if (!pacienteEncontrado) {
-             return res.status(400).json({message: "Paciente No Encontrado"})
+        if (password !== confirmPassword) {
+            return res.status(400).json({message: "Las contraseñas no coinciden"});
         }
 
-        const contraseñaHash = await bcrypt.hash(password, 10);
+        if (pacienteEncontrado) {
+             return res.status(400).json({message: "Paciente ya existe"})
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
 
         const nuevoPaciente = pacientesModel({
             name,
             lasName, 
             email,
-            password,
+            password: passwordHash,
             birthDate,
             phone, 
             address,
@@ -102,5 +108,29 @@ registrarPacientesController.registrar = async (req, res) => {
 }
 
 registrarPacientesController.verificarCodigo = async (req, res) => {
-    
+    try {
+        const {codigoSolicitado} = req.body;
+
+        const tokenRegistro = req.cookies.tokenRegistroCookie;
+
+        const decoded = jsonwebtoken.verify(tokenRegistro, config.jwt.SECRET);
+        const { email, codigoAleatorio } = decoded;
+
+        if (codigoAleatorio !== codigoSolicitado) {
+            return res.status(400).json({message: "Los codigos no coinciden"})
+        }
+
+        const pacienteEncontrado = await pacientesModel.findOne({ correo });
+        pacienteEncontrado.isVerified = true;
+        await pacienteEncontrado.save();
+
+        res.clearCookie("tokenRegistroCookie");
+
+        return res.status(200).json({message: "Correo Verificado"})
+    } catch (error) {
+        console.log("error" + error)
+        return res.status(500).json({message: "Internal server error"})
+    }
 }
+
+export default registrarClienteController;
