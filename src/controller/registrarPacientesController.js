@@ -53,7 +53,7 @@ registrarPacientesController.registrar = async (req, res) => {
 
         const nuevoPaciente = pacientesModel({
             name,
-            lasName, 
+            lastName, 
             email,
             password: passwordHash,
             birthDate,
@@ -73,7 +73,7 @@ registrarPacientesController.registrar = async (req, res) => {
 
         const tokenCodigo = jsonwebtoken.sign(
             {email, codigoAleatorio},
-            config.jwt.SECRET,
+            config.JWT.SECRET,
             {expiresIn: "15 m"}
         );
 
@@ -120,7 +120,7 @@ registrarPacientesController.verificarCodigo = async (req, res) => {
             return res.status(400).json({message: "Los codigos no coinciden"})
         }
 
-        const pacienteEncontrado = await pacientesModel.findOne({ correo });
+        const pacienteEncontrado = await pacientesModel.findOne({ email });
         pacienteEncontrado.isVerified = true;
         await pacienteEncontrado.save();
 
@@ -133,4 +133,4 @@ registrarPacientesController.verificarCodigo = async (req, res) => {
     }
 }
 
-export default registrarClienteController;
+export default registrarPacientesController;

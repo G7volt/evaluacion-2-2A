@@ -1,55 +1,55 @@
 import bcrypt from "bcryptjs";
 import jsonwebtoken from "jsonwebtoken";
 
-import clientesModel from "../models/clientesModel.js";
+import pacientesModel from "../models/pacientesModel.js";
 
 import { config } from "../../config.js";
 
-const logInClientesController = {}
+const logInPacientesController = {}
 
-logInClientesController.logIn = async (req, res) => {
+logInPacientesController.logIn = async (req, res) => {
     try {
         
-        const { correo, contraseña } = req.body;
+        const { email, password } = req.body;
 
-        const clienteEncontrado = await clientesModel.findOne({correo});
-        if (!clienteEncontrado) {
+        const pacienteEncontrado = await pacientesModel.findOne({email});
+        if (!pacienteEncontrado) {
             return res.status(404).json({message: "Cliente no Encontrado"});
         }
 
-        if (clienteEncontrado.timeOut & clienteEncontrado.timeOut > Date.now()) {
-            const time = clienteEncontrado.timeOut - Date.now();
+        if (pacienteEncontrado.timeOut & pacienteEncontrado.timeOut > Date.now()) {
+            const time = pacienteEncontrado.timeOut - Date.now();
             return res.status(403).json({message: "Cuenta bloqueada temporalmente", time: time});
         }
 
-        const coincidencia = await bcrypt.compare(contraseña, clienteEncontrado.contraseña);
+        const coincidencia = await bcrypt.compare(password, pacienteEncontrado.contraseña);
 
         if (!coincidencia) {
-            clienteEncontrado.loginAttempts = (clienteEncontrado || 0) + 1;
+            pacienteEncontrado.loginAttempts = (pacienteEncontrado || 0) + 1;
 
-            if (clienteEncontrado.loginAttempts >= 5) {
-                clienteEncontrado.timeOut = Date.now() + 5 * 60 * 1000;
-                clienteEncontrado.loginAttempts = 0
+            if (pacienteEncontrado.loginAttempts >= 5) {
+                pacienteEncontrado.timeOut = Date.now() + 5 * 60 * 1000;
+                pacienteEncontrado.loginAttempts = 0
 
-                await clienteEncontrado.save();
+                await pacienteEncontrado.save();
                 return res.status(403).json({message: "Demasiados intentos"});
             }
 
-            await clienteEncontrado.save();
+            await pacienteEncontrado.save();
             return res.status(403).json({message: "Contraseña incorrecta"})
         }
 
-        clienteEncontrado.loginAttempts = 0;
-        clienteEncontrado.timeOut = null;
-        await clienteEncontrado.save();
+        pacienteEncontrado.loginAttempts = 0;
+        pacienteEncontrado.timeOut = null;
+        await pacienteEncontrado.save();
 
         const tokenAuth = jsonwebtoken.sign(
-            {id: clienteEncontrado.id, tipoUsuario: "Cliente"},
-            config.jwt.secret,
+            {id: pacienteEncontrado.id, tipoUsuario: "Paciente"},
+            config.JWT.SECRET,
             {expiresIn: "7d"}
         );
 
-        res.cookie("cookieAuthCliente", tokenAuth);
+        res.cookie("cookieAuthPaciente", tokenAuth);
 
         return res.status(200).json({message: "Inicio de sesion exitoso"})
         
@@ -59,4 +59,4 @@ logInClientesController.logIn = async (req, res) => {
     }
 }
 
-export default logInClientesController;
+export default logInPacientesController;

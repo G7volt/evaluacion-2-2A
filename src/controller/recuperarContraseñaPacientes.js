@@ -3,14 +3,14 @@ import crypto from "crypto"
 import jsonwebtoken from "jsonwebtoken"
 import bcrypts from "bcryptjs"
 
-import administradorModel from "../models/administradorModel.js";
+import pacientesModel from "../models/pacientesModel.js";
 import HTMLRecuperarContraseña from "../utils/recuperarContraseñaHtmlEmail.js";
 
 import { config } from "../../config.js";
 
-const recuperarContraseñaAdministradorController = {};
+const recuperarContraseñaPacientesController = {};
 
-recuperarContraseñaAdministradorController.solicitarCodigo = async (req, res) => {
+recuperarContraseñaPacientesController.solicitarCodigo = async (req, res) => {
     try {
         const cookieAntigua = req.cookies.tokenRecuperacionCorreo;
         if(cookieAntigua){
@@ -19,16 +19,16 @@ recuperarContraseñaAdministradorController.solicitarCodigo = async (req, res) =
 
         const { correo } = req.body;
 
-        const administradorEncontrado = await administradorModel.findOne({ correo });
-        if(!administradorEncontrado){
+        const pacienteEncontrado = await pacientesModel.findOne({ email });
+        if(!pacienteEncontrado){
             return res.status(400).json({ message: "Correo no encontrado" });
         }
 
         const codigoAleatorio = crypto.randomBytes(3).toString("hex")
 
         const tokenCodigo = jsonwebtoken.sign(
-            {correo, codigoAleatorio, tipoUsuario: "Administrador", verificado: false},
-            config.jwt.secret,
+            {email, codigoAleatorio, tipoUsuario: "Paciente", verificado: false},
+            config.JWT.SECRET,
             {expiresIn: "15m"}
         );
 
@@ -64,7 +64,7 @@ recuperarContraseñaAdministradorController.solicitarCodigo = async (req, res) =
     }
 }
 
-recuperarContraseñaAdministradorController.verificarCodigo = async (req, res) => {
+recuperarContraseñaPacientesController.verificarCodigo = async (req, res) => {
     try {
         const { codigoSolicitado } = req.body;
 
@@ -91,40 +91,4 @@ recuperarContraseñaAdministradorController.verificarCodigo = async (req, res) =
     }
 }
 
-recuperarContraseñaAdministradorController.cambiarContraseña = async (req, res) => {
-    try {
-        const { nuevaContraseña, confirmarContraseña } = req.body;
-
-        if(nuevaContraseña !== confirmarContraseña){
-            return res.status(400).json({ message: "Las contraseñas no coinciden" });
-        }
-
-        const tokenRecuperacion = req.cookies.tokenRecuperacionCorreo;
-
-        const decodificar = jsonwebtoken.verify(tokenRecuperacion, config.jwt.secret);
-        if(!decodificar){
-            return res.status(400).json({ message: "El token expiro" });
-        }
-
-        if(!decodificar.verificado){
-            return res.status(400).json({ message: "El token no ha sido verificado" })
-        }
-
-        const contraseñaHash = await bcrypts.hash(nuevaContraseña, 10);
-
-        await administradorModel.findOneAndUpdate(
-            {correo: decodificar.correo},
-            {contraseña: contraseñaHash},
-            {new: true}
-        );
-
-        res.clearCookie("tokenRecuperacionCorreo");
-
-        return res.status(200).json({ message: "Contraseña actualizada" });
-    } catch (error) {
-        console.log("Error: " + error); 
-		return res.status(500).json({ message: "Error interno del servidor" }); 
-    }
-}
-
-export default recuperarContraseñaAdministradorController;
+export default recuperarContraseñaPacientesController;
